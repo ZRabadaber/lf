@@ -1,0 +1,116 @@
+set drawbox true
+set hidden true
+set ignorecase true
+set icons false
+
+cmd mkdir ${{
+  printf "Directory Name: "
+  read ans
+  mkdir $ans
+}}
+
+cmd mkfile ${{
+  printf "File Name: "
+  read ans
+  touch $ans
+}}
+
+cmd unarchive ${{
+  case "$f" in
+      *.zip) unzip "$f" ;;
+      *.tar.gz) tar -xzvf "$f" ;;
+      *.tgz) tar -xzvf "$f" ;;
+      *.tar.xz) tar -xJvf "$f" ;;
+      *.tar.bz2) tar -xjvf "$f" ;;
+      *.tar) tar -xvf "$f" ;;
+      *) echo "Unsupported format" ;;
+  esac
+}}
+
+cmd tgz ${{
+  arcName=$(basename "$PWD")
+  workDir=$(dirname "$PWD")/"$arcName"
+  tar cvf "$workDir"/"$arcName.tar" --files-from /dev/null
+  for file in $fx
+    do
+      fn=$(basename "$file")
+      dn=$(dirname "$file")
+      tar -C "$dn" -r -v -f "$workDir"/"$arcName.tar" "$fn"
+    done
+  gzip "$workDir"/"$arcName.tar"
+}}
+cmd zip ${{
+  arcName=$(basename "$PWD")
+  workDir=$(dirname "$PWD")/"$arcName"
+  for file in $fx
+    do
+      zip -rju "$workDir"/"$arcName.zip" "$file"
+    done
+}}
+cmd txz ${{
+  arcName=$(basename "$PWD")
+  workDir=$(dirname "$PWD")/"$arcName"
+  tar cvf "$workDir"/"$arcName.tar" --files-from /dev/null
+  for file in $fx
+    do
+      fn=$(basename "$file")
+      dn=$(dirname "$file")
+      tar -C "$dn" -r -v -f "$workDir"/"$arcName.tar" "$fn"
+    done
+  xz "$workDir"/"$arcName.tar"
+}}
+cmd tar ${{
+  arcName=$(basename "$PWD")
+  workDir=$(dirname "$PWD")/"$arcName"
+  tar cf "$workDir"/"$arcName.tar" --files-from /dev/null
+  for file in $fx
+    do
+      fn=$(basename "$file")
+      dn=$(dirname "$file")
+      tar -C "$dn" -r -f "$workDir"/"$arcName.tar" "$fn"
+    done
+}}
+
+
+# Trash bindings
+cmd trash ${{
+  files=$(printf "$fx" | tr '\n' ';')
+  while [ "$files" ]; do
+    file=${files%%;*}
+
+    trash-put "$(basename "$file")"
+    if [ "$files" = "$file" ]; then
+      files=''
+    else
+      files="${files#*;}"
+    fi
+  done
+}}
+
+cmd restore_trash ${{
+  trash-restore
+}}
+
+# Bindings
+map d
+map m
+
+map au unarchive
+map ag tgz
+map az zip
+map ax txz
+map at tar
+
+# Basic Functions
+map . &flatpak run com.visualstudio.code .
+map dd trash
+map dr restore_trash
+map p paste
+map x cut
+map y copy
+map <enter> open
+map R reload
+map mf mkfile
+map md mkdir
+map mm mark-save
+
